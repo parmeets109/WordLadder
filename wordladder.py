@@ -99,3 +99,85 @@ def pathSelection(path):
 def same(item, target):
     return len([item for (item, target) in zip(item, target) if item == target])
 
+# this function starts the main task of program i.e. to find a path
+
+def find(word, words, seen, target, path):
+    global path_select  # global helps to choose a variable which is outside a function
+    global counter  # global helps to choose a variable which is outside a function
+    list = []
+    for i in range(len(word)):
+        list += build(word[:i] + "." + word[i + 1:], words, seen, list)  # uses '.' as a wild card
+    if len(list) == 0:
+        return False
+
+    if path_select:
+        list = sorted([(same(w, target), w) for w in list], reverse=True)
+    else:
+        counter = []
+        list = sorted([(same(w, target), w) for w in list])
+    for (match, item) in list:
+        for letter in counter:
+            if letter in item:
+                list.remove((match, item))
+        if match >= len(target) - 1:
+            if match == len(target) - 1:
+                path.append(item)
+            return True
+        seen[item] = True
+    for (match, item) in list:
+        path.append(item)
+        if find(item, words, seen, target, path):
+            return True
+        path.pop()
+
+
+# Input section
+# here start all of the functions of the program
+
+
+file_name = input("Enter dictionary name: ")  # allows the user to input the name of the dictionary file i.e. a txtfile
+file = checkFile(file_name)  # checkFile returns the file if it exists or input correctly
+lines = file.readlines()
+cnt = 0
+while True:
+
+    # while loop include all the required inputs
+    word = input("Please enter start word from dictionary:")  # allows the user to input  a start word from dictionary
+    start = startWordCheck(word)  # return the start word if  valid
+
+    word = input("please enter a word from dictionary that must exist and should be of same length as start word:")  # allows the user to input  a neccessary word from dictionary
+    must = MustWordCheck(word)  # return the necessary word if  valid
+
+    word = input("Please enter target word from dictionary of same length as start word:")  # allows the user to input  a target word from dictionary
+    target = targetWordCheck(word)  # return the target word if  valid
+
+    path = input("please select either a longer path or short path by selecting 'L' or 'S':")  # allows the user to select  desired path
+    path_select = pathSelection(path.lower())  # pathSelection returns the path if valid
+
+    wordsList = str(input("Please insert a list of words separated by commas that should not be on the path:")).replace(" ", "")  # allows the user to input  a list words from dictionary which should not be displayed on path
+    blacklistWords = blacklisted(wordsList)
+    words = []
+    for line in lines:
+        element = line.rstrip()
+        if len(element) == len(start) and element not in blacklistWords and element.isalpha():
+            words.append(element)
+
+    break
+
+count = 0
+counter = []
+path = [start]
+seen = {start: True}
+
+if len(must)==0:
+    if find(start, words, seen, target, path):
+        path.append(target)
+        print(len(path) - 1, path)
+else:
+    if find(start, words, seen, must, path):
+        path.append(must)
+        if find(must, words, seen, target, path):
+            path.append(target)
+            print(len(path) - 1, path)
+    else:
+        print("No path found")
